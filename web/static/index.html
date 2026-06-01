@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>I-ťing aplikace</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f6f3ec; color: #222; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .card { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+    textarea, select { width: 100%; padding: 10px; margin-top: 8px; margin-bottom: 12px; }
+    .lines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    button { background: #0d6b6f; color: white; border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>I-ťing / Yi Jing</h1>
+    <div class="grid">
+      <section class="card">
+        <h2>Nová věštba</h2>
+        <label>Otázka</label>
+        <textarea id="question" rows="4" placeholder="Na co se chci zeptat?"></textarea>
+        <label>Metoda</label>
+        <select id="method">
+          <option value="manual">Ruční zadání</option>
+          <option value="coins">Mince</option>
+        </select>
+        <label>Čáry odspodu nahoru (6,7,8,9)</label>
+        <div class="lines" id="lines"></div>
+        <button id="saveBtn">Uložit věštbu</button>
+      </section>
+      <section class="card">
+        <h2>Poslední odpověď</h2>
+        <pre id="result">Zatím nic.</pre>
+      </section>
+    </div>
+    <section class="card" style="margin-top:24px;">
+      <h2>Historie</h2>
+      <pre id="history">Načítám…</pre>
+    </section>
+  </div>
+  <script>
+    const linesEl = document.getElementById('lines');
+    for (let i = 1; i <= 6; i++) {
+      const s = document.createElement('select');
+      s.id = 'line-' + i;
+      [6,7,8,9].forEach(v => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = `Čára ${i}: ${v}`;
+        s.appendChild(o);
+      });
+      s.value = '8';
+      linesEl.appendChild(s);
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/api/readings');
+      const data = await res.json();
+      document.getElementById('history').textContent = JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const payload = {
+        question: document.getElementById('question').value,
+        method: document.getElementById('method').value,
+        lines: Array.from({length: 6}, (_, i) => ({ position: i + 1, value: Number(document.getElementById('line-' + (i+1)).value) }))
+      };
+      const res = await fetch('/api/readings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      loadHistory();
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>
