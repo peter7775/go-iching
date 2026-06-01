@@ -1,21 +1,66 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"log"
-	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/example/iching-app/internal/httpapi"
-	"github.com/example/iching-app/internal/service"
-	mem "github.com/example/iching-app/internal/storage/memory"
+	"github.com/example/iching-fiber-app/internal/config"
+	"github.com/example/iching-fiber-app/internal/httpfiber"
+	"github.com/example/iching-fiber-app/internal/service"
+	mem "github.com/example/iching-fiber-app/internal/storage/memory"
+	pgrepo "github.com/example/iching-fiber-app/internal/storage/postgres"
+	sqliterepo "github.com/example/iching-fiber-app/internal/storage/sqlite"
 )
 
 func main() {
-	repo := mem.NewReadingRepository()
-	svc := service.NewReadingService(repo)
-	h := httpapi.NewHandler(svc)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	log.Println("listening on :8080")
-	if err := http.ListenAndServe(":8080", h.Routes()); err != nil {
+	cfg := config.Load()
+	repo, cleanup := mustRepository(cfg)
+	defer cleanup()
+
+	svc := service.NewReadingService(repo)
+	app := httpfiber.NewApp(cfg, svc)
+
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = app.ShutdownWithContext(shutdownCtx)
+	}()
+
+	log.Printf("listening on %s", cfg.Addr)
+	if err := app.Listen(cfg.Addr); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func mustRepository(cfg config.Config) (service.ReadingRepository, func()) {
+	switch cfg.Storage {
+	case "postgres":
+		db, err := sql.Open("pgx", cfg.PostgresDSN)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Fatal(err)
+		}
+		return pgrepo.NewReadingRepository(db), func() { _ = db.Close() }
+	case "sqlite":
+		db, err := sql.Open("sqlite", cfg.SQLitePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Fatal(err)
+		}
+		return sqliterepo.NewReadingRepository(db), func() { _ = db.Close() }
+	default:
+		return mem.NewReadingRepository(), func() {}
 	}
 }

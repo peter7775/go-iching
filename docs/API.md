@@ -1,16 +1,16 @@
-# API návrh
+# API návrh (Fiber)
 
 ## GET /health
-Vrací stav služby.
+Health check.
 
 ## GET /api/readings
-Seznam uložených věšteb.
+Seznam věšteb.
 
-## GET /api/readings/{id}
-Detail věštby.
+## GET /api/readings/:id
+Detail jedné věštby.
 
 ## POST /api/readings
-Vytvoří a uloží věštbu.
+Vytvoření a uložení věštby.
 
 ### Request
 ```json

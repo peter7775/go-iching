@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/example/iching-app/internal/domain"
+	"github.com/example/iching-fiber-app/internal/domain"
 )
 
 type ReadingRepository interface {
@@ -25,9 +25,9 @@ func NewReadingService(repo ReadingRepository) *ReadingService {
 }
 
 type CreateReadingInput struct {
-	Question string             `json:"question"`
-	Method   domain.CastMethod  `json:"method"`
-	Lines    []domain.Line      `json:"lines"`
+	Question string            `json:"question"`
+	Method   domain.CastMethod `json:"method"`
+	Lines    []domain.Line     `json:"lines"`
 }
 
 func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (domain.Reading, error) {
@@ -37,16 +37,13 @@ func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (dom
 	if len(in.Lines) != 6 {
 		return domain.Reading{}, errors.New("exactly 6 lines are required")
 	}
-
 	primary := computePrimaryHexagram(in.Lines)
 	relating := computeRelatingHexagram(in.Lines)
 	changing := changingLines(in.Lines)
-
-	interp := "MVP interpretace: doplň podle datasetu hexagramů a měnících se čar."
+	interp := "MVP interpretace: doplň dataset všech 64 hexagramů a logiku výběru textu proměnných čar."
 	if h, ok := domain.SampleHexagrams[primary]; ok {
 		interp = h.Judgment
 	}
-
 	r := domain.Reading{
 		ID:             newID(),
 		Question:       in.Question,
@@ -58,20 +55,14 @@ func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (dom
 		Interpretation: interp,
 		CreatedAt:      time.Now().UTC(),
 	}
-
 	return s.repo.Save(ctx, r)
 }
 
-func (s *ReadingService) List(ctx context.Context) ([]domain.Reading, error) {
-	return s.repo.List(ctx)
-}
-
-func (s *ReadingService) Get(ctx context.Context, id string) (domain.Reading, error) {
-	return s.repo.Get(ctx, id)
-}
+func (s *ReadingService) List(ctx context.Context) ([]domain.Reading, error) { return s.repo.List(ctx) }
+func (s *ReadingService) Get(ctx context.Context, id string) (domain.Reading, error) { return s.repo.Get(ctx, id) }
 
 func changingLines(lines []domain.Line) []int {
-	out := make([]int, 0)
+	out := []int{}
 	for _, l := range lines {
 		if l.IsChanging() {
 			out = append(out, l.Position)
@@ -81,12 +72,8 @@ func changingLines(lines []domain.Line) []int {
 }
 
 func computePrimaryHexagram(lines []domain.Line) int {
-	if allYang(lines) {
-		return 1
-	}
-	if allYin(lines) {
-		return 2
-	}
+	if allYang(lines) { return 1 }
+	if allYin(lines) { return 2 }
 	return 0
 }
 
@@ -94,10 +81,10 @@ func computeRelatingHexagram(lines []domain.Line) int {
 	flipped := make([]domain.Line, len(lines))
 	copy(flipped, lines)
 	for i := range flipped {
-		if flipped[i].Value == domain.OldYin {
+		switch flipped[i].Value {
+		case domain.OldYin:
 			flipped[i].Value = domain.YoungYang
-		}
-		if flipped[i].Value == domain.OldYang {
+		case domain.OldYang:
 			flipped[i].Value = domain.YoungYin
 		}
 	}
@@ -105,23 +92,13 @@ func computeRelatingHexagram(lines []domain.Line) int {
 }
 
 func allYang(lines []domain.Line) bool {
-	for _, l := range lines {
-		if !l.IsYang() {
-			return false
-		}
-	}
+	for _, l := range lines { if !l.IsYang() { return false } }
 	return true
 }
-
 func allYin(lines []domain.Line) bool {
-	for _, l := range lines {
-		if l.IsYang() {
-			return false
-		}
-	}
+	for _, l := range lines { if l.IsYang() { return false } }
 	return true
 }
-
 func newID() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
