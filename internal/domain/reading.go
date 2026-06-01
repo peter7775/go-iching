@@ -16,13 +16,8 @@ type Line struct {
 	Value    LineValue `json:"value"`
 }
 
-func (l Line) IsYang() bool {
-	return l.Value == YoungYang || l.Value == OldYang
-}
-
-func (l Line) IsChanging() bool {
-	return l.Value == OldYin || l.Value == OldYang
-}
+func (l Line) IsYang() bool { return l.Value == YoungYang || l.Value == OldYang }
+func (l Line) IsChanging() bool { return l.Value == OldYin || l.Value == OldYang }
 
 type CastMethod string
 
@@ -31,22 +26,54 @@ const (
 	MethodManual CastMethod = "manual"
 )
 
-type Reading struct {
-	ID             string     `json:"id"`
-	Question       string     `json:"question"`
-	Method         CastMethod `json:"method"`
-	Lines          []Line     `json:"lines"`
-	PrimaryNumber  int        `json:"primary_number"`
-	RelatingNumber int        `json:"relating_number"`
-	ChangingLines  []int      `json:"changing_lines"`
-	Interpretation string     `json:"interpretation,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
+type InterpretationSection struct {
+	Text     string `json:"text"`
+	Comments string `json:"comments,omitempty"`
 }
 
-type Hexagram struct {
-	Number    int            `json:"number"`
-	Name      string         `json:"name"`
-	Judgment  string         `json:"judgment"`
-	Image     string         `json:"image"`
-	LineTexts map[int]string `json:"line_texts"`
+type InterpretationTrigram struct {
+	Chinese    string `json:"chinese"`
+	Symbolic   string `json:"symbolic"`
+	Alchemical string `json:"alchemical"`
+}
+
+type InterpretationHexagram struct {
+	Number      int                   `json:"number"`
+	Name        string                `json:"name"`
+	Title       string                `json:"title"`
+	Character   string                `json:"character,omitempty"`
+	Traditional string                `json:"traditional,omitempty"`
+	Pinyin      string                `json:"pinyin,omitempty"`
+	Above       InterpretationTrigram `json:"above"`
+	Below       InterpretationTrigram `json:"below"`
+	Judgment    InterpretationSection `json:"judgment"`
+	Image       InterpretationSection `json:"image"`
+}
+
+type InterpretationLine struct {
+	Line     int    `json:"line"`
+	Text     string `json:"text"`
+	Comments string `json:"comments,omitempty"`
+}
+
+type ReadingInterpretation struct {
+	Language      string                 `json:"language"`
+	Primary       InterpretationHexagram `json:"primary"`
+	ChangingLines []InterpretationLine   `json:"changing_lines"`
+	Relating      InterpretationHexagram `json:"relating"`
+	Summary       string                 `json:"summary"`
+	Markdown      string                 `json:"markdown,omitempty"`
+}
+
+type Reading struct {
+	ID             string                `json:"id"`
+	Question       string                `json:"question"`
+	Method         CastMethod            `json:"method"`
+	Language       string                `json:"language"`
+	Lines          []Line                `json:"lines"`
+	PrimaryNumber  int                   `json:"primary_number"`
+	RelatingNumber int                   `json:"relating_number"`
+	ChangingLines  []int                 `json:"changing_lines"`
+	Interpretation ReadingInterpretation `json:"interpretation"`
+	CreatedAt      time.Time             `json:"created_at"`
 }

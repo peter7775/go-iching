@@ -3,51 +3,104 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>I-ťing aplikace ve Fiber</title>
+  <title>I-ťing aplikace</title>
   <style>
-    body{font-family:system-ui,sans-serif;margin:0;background:#f7f5ef;color:#222}
-    .wrap{max-width:1000px;margin:0 auto;padding:24px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-    .card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-    textarea,select{width:100%;padding:10px;margin:8px 0 12px}
-    .lines{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    button{background:#0d6b6f;color:#fff;border:0;border-radius:10px;padding:12px 16px;cursor:pointer}
-    pre{white-space:pre-wrap;word-break:break-word}
-    @media (max-width: 800px){.grid{grid-template-columns:1fr}}
+    :root{--bg:#f6f3ec;--card:#ffffff;--text:#222;--muted:#666;--accent:#0d6b6f;--border:#ddd8cf;--danger:#a23d2b}
+    *{box-sizing:border-box} body{font-family:system-ui,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1180px;margin:0 auto;padding:24px}.grid{display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:start}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:8px}.lang-switch{display:flex;gap:8px;align-items:center}
+    .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+    h1,h2,h3{margin:0 0 12px} label{display:block;font-weight:600;margin:10px 0 6px}
+    textarea,select{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .lines{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px 16px;cursor:pointer}.ghost{background:#fff;color:#0d6b6f;border:1px solid #0d6b6f}
+    .reading-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.stat{background:#f8f7f4;border:1px solid var(--border);padding:12px;border-radius:12px}
+    .hex-lines{display:grid;gap:8px;margin:12px 0 20px}.hex-line{height:14px;display:flex;align-items:center;gap:8px}.seg{height:10px;background:#222;border-radius:999px;display:block}.yang .seg{width:180px}.yin .seg{width:80px}.yin .gap{width:20px}.changing{color:#a23d2b;font-size:13px;font-weight:700}
+    .section{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}.muted{color:var(--muted)} .tiny{font-size:13px;color:var(--muted)} .hanzi{font-size:28px;line-height:1.1}
+    .history-wrap{margin-top:24px}.history-panel[hidden]{display:none}.history-item{padding:10px 0;border-top:1px solid var(--border)} .history-item:first-child{border-top:0}.error{color:var(--danger);background:#fff5f3;border:1px solid #ebc4bc;padding:12px;border-radius:12px}
+    @media (max-width: 920px){.grid{grid-template-columns:1fr}.reading-meta{grid-template-columns:1fr}.topbar{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>I-ťing / Yi Jing — Fiber verze</h1>
+  <div class="topbar">
+    <h1 id="appTitle">I-ťing / Yi Jing</h1>
+    <div class="lang-switch">
+      <label for="lang" id="langLabel">Jazyk</label>
+      <select id="lang"><option value="cs">Čeština</option><option value="en">English</option></select>
+    </div>
+  </div>
   <div class="grid">
     <section class="card">
-      <h2>Nová věštba</h2>
-      <label>Otázka</label>
-      <textarea id="question" rows="4"></textarea>
-      <label>Metoda</label>
-      <select id="method"><option value="manual">Ruční zadání</option><option value="coins">Mince</option></select>
-      <label>Čáry odspodu nahoru</label>
+      <h2 id="newReadingTitle">Nová věštba</h2>
+      <label for="question" id="questionLabel">Otázka</label>
+      <textarea id="question" rows="4" placeholder="Na co se ptáš?"></textarea>
+      <label for="method" id="methodLabel">Způsob vytvoření</label>
+      <select id="method">
+        <option value="manual">Ruční zadání čar</option>
+        <option value="coins">Náhodné generování (mince)</option>
+      </select>
+      <label id="linesLabel">Čáry odspodu nahoru</label>
       <div class="lines" id="lines"></div>
-      <button id="saveBtn">Uložit</button>
+      <p class="tiny" id="linesHint">Při náhodném generování se ruční hodnoty čar ignorují.</p>
+      <div class="actions">
+        <button id="createBtn">Vytvořit věštbu</button>
+        <button id="mdBtn" class="ghost">Stáhnout Markdown</button>
+      </div>
     </section>
-    <section class="card"><h2>Výsledek</h2><pre id="result">Zatím nic.</pre></section>
+    <section class="card">
+      <h2 id="resultTitle">Výsledek</h2>
+      <div id="result"><p class="muted" id="emptyResult">Zatím žádná věštba.</p></div>
+    </section>
   </div>
-  <section class="card" style="margin-top:24px;"><h2>Historie</h2><pre id="history">Načítám…</pre></section>
+  <div class="history-wrap">
+    <button id="historyToggleBtn" class="ghost">Zobrazit historii</button>
+    <section class="card history-panel" id="historyPanel" hidden>
+      <h2 id="historyTitle">Historie</h2>
+      <div id="history"><p class="muted" id="historyEmpty">Zatím bez historie.</p></div>
+    </section>
+  </div>
 </div>
 <script>
-const linesEl = document.getElementById('lines');
-for (let i=1;i<=6;i++) {
-  const s=document.createElement('select'); s.id='line-'+i;
-  [6,7,8,9].forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=`Čára ${i}: ${v}`; s.appendChild(o);});
-  s.value='8'; linesEl.appendChild(s);
-}
-async function loadHistory(){ const r=await fetch('/api/readings'); const d=await r.json(); document.getElementById('history').textContent=JSON.stringify(d,null,2); }
-document.getElementById('saveBtn').addEventListener('click', async()=>{
-  const payload={question:document.getElementById('question').value, method:document.getElementById('method').value, lines:Array.from({length:6},(_,i)=>({position:i+1,value:Number(document.getElementById('line-'+(i+1)).value)}))};
-  const r=await fetch('/api/readings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const d=await r.json(); document.getElementById('result').textContent=JSON.stringify(d,null,2); loadHistory();
-});
-loadHistory();
+let currentLang='cs'; let dict={}; let lastReading=null; let historyVisible=false; const linesEl=document.getElementById('lines');
+for(let i=1;i<=6;i++){const s=document.createElement('select');s.id='line-'+i;[6,7,8,9].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=`${i}. ${v}`;s.appendChild(o);});s.value='8';linesEl.appendChild(s)}
+async function loadDict(lang){const r=await fetch(`/i18n/${lang}.json`);dict=await r.json();currentLang=lang}
+function t(k){return dict[k]||k}
+function esc(v){return (v===undefined||v===null?'':String(v)).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function val(v,f=''){return (v===undefined||v===null||v==='')?f:v}
+function trigramBlock(label,tg){if(!tg||(!tg.chinese&&!tg.symbolic&&!tg.alchemical))return '';return `<div class="tiny"><strong>${esc(label)}:</strong> ${esc(val(tg.chinese))} / ${esc(val(tg.symbolic))} / ${esc(val(tg.alchemical))}</div>`}
+function hexHeader(h,fallbackNumber){const number=val(h?.number,fallbackNumber); const title=val(h?.title,val(h?.name,t('untitled'))); const meta=[val(h?.traditional),val(h?.pinyin)].filter(Boolean).join(' '); return `<div><div class="hanzi">${esc(val(h?.character))}</div><h3>${esc(number)} — ${esc(title)}</h3>${meta?`<div class="tiny">${esc(meta)}</div>`:''}${trigramBlock(t('upper'),h?.above)}${trigramBlock(t('lower'),h?.below)}</div>`}
+function section(title,text,comments=''){if(!text&&!comments)return '';return `<div class="section"><h3>${esc(title)}</h3>${text?`<p>${esc(text)}</p>`:''}${comments?`<p class="muted">${esc(comments)}</p>`:''}</div>`}
+function renderHexLines(lines){if(!lines?.length)return '';return `<div class="hex-lines">${[...lines].reverse().map(line=>{const yang=line.value===7||line.value===9;const changing=line.value===6||line.value===9;return `<div class="hex-line ${yang?'yang':'yin'}"><span class="seg"></span>${yang?'':`<span class="gap"></span><span class="seg"></span>`}<span class="changing">${changing?t('changing').toLowerCase():''}</span></div>`}).join('')}</div>`}
+function renderReading(data){lastReading=data;const i=data.interpretation||{};const primary=i.primary||{};const relating=i.relating||{};const changing=i.changing_lines||[];return `
+  <div class="reading-meta">
+    <div class="stat"><strong>${esc(t('primary'))}</strong><div>${esc(val(data.primary_number, primary.number||'—'))}</div></div>
+    <div class="stat"><strong>${esc(t('changing'))}</strong><div>${changing.length?esc(changing.map(x=>x.line).join(', ')):t('none')}</div></div>
+    <div class="stat"><strong>${esc(t('relating'))}</strong><div>${esc(val(data.relating_number, relating.number||'—'))}</div></div>
+  </div>
+  <div><strong>${esc(t('q'))}:</strong> ${esc(val(data.question,'—'))}</div>
+  ${renderHexLines(data.lines||[])}
+  <div class="section">${hexHeader(primary, data.primary_number)}</div>
+  ${section(t('judgment'), primary.judgment?.text, primary.judgment?.comments)}
+  ${section(t('image'), primary.image?.text, primary.image?.comments)}
+  ${changing.length?`<div class="section"><h3>${esc(t('changingLines'))}</h3>${changing.map(line=>`<p><strong>${esc(line.line)}.</strong> ${esc(line.text||'')}</p>${line.comments?`<p class="muted">${esc(line.comments)}</p>`:''}`).join('')}</div>`:''}
+  <div class="section">${hexHeader(relating, data.relating_number)}</div>
+  ${section(t('relatingJudgment'), relating.judgment?.text, relating.judgment?.comments)}
+  ${section(t('relatingImage'), relating.image?.text, relating.image?.comments)}
+  ${i.summary?`<div class="section"><p class="muted">${esc(i.summary)}</p></div>`:''}`}
+function renderError(msg, detail=''){document.getElementById('result').innerHTML=`<div class="error"><strong>${esc(t('loadErr'))}</strong><div>${esc(msg)}</div>${detail?`<div class="tiny">${esc(detail)}</div>`:''}</div>`}
+function renderHistory(items){if(!items.length)return `<p class="muted">${esc(t('emptyHistory'))}</p>`;return items.map(item=>`<div class="history-item"><strong>${esc(item.question)}</strong><div class="muted">Hexagram ${esc(item.primary_number)} → ${esc(item.relating_number)} | ${new Date(item.created_at).toLocaleString(currentLang==='cs'?'cs-CZ':'en-US')}</div></div>`).join('')}
+function currentPayload(){const method=document.getElementById('method').value; return {question:document.getElementById('question').value.trim(),method,language:currentLang,random:method==='coins',lines:Array.from({length:6},(_,i)=>({position:i+1,value:Number(document.getElementById('line-'+(i+1)).value)}))}}
+async function loadHistory(){try{const r=await fetch('/api/readings');const d=await r.json();document.getElementById('history').innerHTML=renderHistory(Array.isArray(d)?d:[])}catch(e){document.getElementById('history').innerHTML=`<p class="muted">${esc(t('emptyHistory'))}</p>`}}
+async function createReading(){const payload=currentPayload(); if(!payload.question){renderError(t('needQuestion')); return;} try{const r=await fetch('/api/readings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const raw=await r.text(); let d={}; try{d=raw?JSON.parse(raw):{}}catch(e){renderError(t('serverJsonError'), raw.slice(0,300)); return} if(!r.ok){renderError(d.error||t('serverError'), raw.slice(0,300)); return} document.getElementById('result').innerHTML=renderReading(d); if(historyVisible) loadHistory()}catch(e){renderError(t('connectionError'), e.message || String(e))}}
+function downloadMarkdown(){if(!lastReading?.interpretation?.markdown){renderError(t('needReading'));return} const blob=new Blob([lastReading.interpretation.markdown],{type:'text/markdown;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=currentLang==='cs'?'iching-vestba.md':'iching-reading.md'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function applyTexts(){document.documentElement.lang=currentLang;document.getElementById('langLabel').textContent=t('lang');document.getElementById('newReadingTitle').textContent=t('newReading');document.getElementById('questionLabel').textContent=t('question');document.getElementById('question').placeholder=t('questionPh');document.getElementById('methodLabel').textContent=t('method');document.querySelector('#method option[value="manual"]').textContent=t('manual');document.querySelector('#method option[value="coins"]').textContent=t('coins');document.getElementById('linesLabel').textContent=t('lines');document.getElementById('linesHint').textContent=t('linesHint');document.getElementById('createBtn').textContent=t('create');document.getElementById('mdBtn').textContent=t('download');document.getElementById('resultTitle').textContent=t('result');document.getElementById('historyTitle').textContent=t('history');document.getElementById('historyToggleBtn').textContent=historyVisible?t('hideHistory'):t('showHistory');if(lastReading){document.getElementById('result').innerHTML=renderReading(lastReading)}else{document.getElementById('result').innerHTML=`<p class="muted">${t('emptyResult')}</p>`}if(historyVisible) loadHistory()}
+async function switchLang(lang){await loadDict(lang);applyTexts()}
+document.getElementById('createBtn').addEventListener('click',createReading)
+document.getElementById('mdBtn').addEventListener('click',downloadMarkdown)
+document.getElementById('lang').addEventListener('change',e=>switchLang(e.target.value))
+document.getElementById('historyToggleBtn').addEventListener('click',async()=>{historyVisible=!historyVisible;document.getElementById('historyPanel').hidden=!historyVisible;applyTexts();if(historyVisible) await loadHistory()})
+(async()=>{await switchLang('cs')})()
 </script>
 </body>
 </html>

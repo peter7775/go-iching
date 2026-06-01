@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/example/iching-fiber-app/internal/db"
 	"github.com/example/iching-fiber-app/internal/config"
 	"github.com/example/iching-fiber-app/internal/httpfiber"
 	"github.com/example/iching-fiber-app/internal/service"
