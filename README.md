@@ -4,6 +4,12 @@ A Go application for I Ching divination with a Fiber-based HTTP API, a browser f
 
 ![screenshot.png](cmd/api/static/screenshot.png)
 
+
+
+
+## Buy me a coffee, if you like and use this app
+
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FF813F?style=flat&logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/petrstepanek99)
 ## Overview
 
 The application is structured as a small web app. A Go backend handles reading generation and persistence, while the frontend is served as static files from `cmd/api/static`. The API currently exposes endpoints for listing readings, fetching a reading by ID, creating a reading, and creating a randomized reading. 
