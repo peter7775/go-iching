@@ -515,10 +515,12 @@ function applyTexts(){
 async function switchLang(lang){
   await loadDict(lang);
   applyTexts();
-  if(historyVisible) await loadHistory();
-}
-
-document.getElementById('createBtn').addEventListener('click',createReading);
+  if(historyVisible){
+    await loadHistory();
+    await loadStats();
+    if(selectedHistoryId) await loadReadingDetail(selectedHistoryId);
+  }
+}document.getElementById('createBtn').addEventListener('click',createReading);
 document.getElementById('mdBtn').addEventListener('click',downloadMarkdown);
 document.getElementById('lang').addEventListener('change',e=>switchLang(e.target.value));
 document.getElementById('historyToggleBtn').addEventListener('click',async()=>{
