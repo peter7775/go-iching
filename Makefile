@@ -1,6 +1,6 @@
 APP_NAME := iching-api
 BUILD_DIR := bin
-MAIN_PKG := ./cmd/api
+MAIN_PKG := ./cmd/api/main.go
 GO := go
 GOFMT := gofmt
 GOLANGCI_LINT := $(CURDIR)/bin/golangci-lint
