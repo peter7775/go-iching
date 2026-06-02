@@ -2,6 +2,8 @@
 
 A Go application for I Ching divination with a Fiber-based HTTP API, a browser frontend, and persistent reading storage. The current project supports SQLite, PostgreSQL, and in-memory repositories, and stores each reading together with the original question, line data, interpretation payload, and optional reflection fields. 
 
+![screenshot.png](web/static/screenshot.png)
+
 ## Overview
 
 The application is structured as a small web app. A Go backend handles reading generation and persistence, while the frontend is served as static files from `web/static`. The API currently exposes endpoints for listing readings, fetching a reading by ID, creating a reading, and creating a randomized reading. 
