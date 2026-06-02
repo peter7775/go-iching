@@ -1,29 +1,29 @@
 # Release Guide
 
-## Příprava na release
+## Preparing for Release
 
-Pokud chcete vytvořit nový release aplikace I Ching, postupujte dle tohoto průvodce.
+If you want to create a new release of the I Ching application, follow this guide.
 
-### Krok 1: Ověřte kód
+### Step 1: Verify the Code
 
 ```bash
-# Spusťte všechny kontroly
+# Run all checks
 make audit
 
-# Nebo jednotlivě:
+# Or individually:
 make tidy      # go mod tidy
 make vet       # go vet ./...
 make lint      # golangci-lint
 make test      # go test ./...
 ```
 
-### Krok 2: Vytvořte git tag
+### Step 2: Create a Git Tag
 
 ```bash
-# Případ pro verzi 1.0.0
+# Example for version 1.0.0
 git tag -a v1.0.0 -m "Release v1.0.0: Description"
 
-# Nebo s podrobnější zprávou
+# Or with a more detailed message
 git tag -a v1.0.0 -F - << 'EOF'
 Release v1.0.0: Major features
 
@@ -35,39 +35,39 @@ Signed-by: Your Name <your@email.com>
 EOF
 ```
 
-### Krok 3: Push tagu na GitHub
+### Step 3: Push Tag to GitHub
 
-**Lokálně:**
+**Locally:**
 ```bash
 git push origin v1.0.0
 ```
 
-**Jakmile pushneš tag, GitHub Actions automaticky:**
-- Spustí build pro všechny platformy
-- Vytvoří GitHub Release
-- Nahraje binárky
+**Once you push the tag, GitHub Actions automatically:**
+- Runs builds for all platforms
+- Creates a GitHub Release
+- Uploads binaries
 
-### Krok 4: Ověřte release na GitHubu
+### Step 4: Verify Release on GitHub
 
-1. Jděte na: https://github.com/your-org/go-iching/releases
-2. Měli byste vidět nový release s objekty a popisy
-3. Stáhněte si binárky a otestujte
+1. Go to: https://github.com/your-org/go-iching/releases
+2. You should see the new release with assets and descriptions
+3. Download the binaries and test them
 
 ---
 
-## Lokální build release (bez GitHub)
+## Local Release Build (without GitHub)
 
-Pokud budete dělat release lokálně bez GitHub Actions:
+If you want to build a release locally without GitHub Actions:
 
 ```bash
-# Ujistěte se, že máte správný git tag
+# Make sure you have the correct git tag
 git tag -a v1.0.0 -m "Release v1.0.0"
 
-# Spusťte release build
+# Run release build
 make release-build
 ```
 
-Výsledné balíčky budou v `dist/`:
+The resulting packages will be in `dist/`:
 - `iching-api-linux-amd64-v1.0.0.tar.gz`
 - `iching-api-linux-arm64-v1.0.0.tar.gz`
 - `iching-api-windows-amd64-v1.0.0.zip`
@@ -76,66 +76,66 @@ Výsledné balíčky budou v `dist/`:
 
 ---
 
-## Instalace z release
+## Installation from Release
 
 ### Linux/macOS
 
 ```bash
-# Stáhnout a rozbalit
+# Download and extract
 tar -xzf iching-api-linux-amd64-v1.0.0.tar.gz
 
-# Prvního spuštění
+# First run
 ./iching-api-linux-amd64
 ```
 
 ### Windows
 
 ```cmd
-# Rozbalit ZIP
-# Spustit iching-api-windows-amd64.exe
+# Extract ZIP
+# Run iching-api-windows-amd64.exe
 iching-api-windows-amd64.exe
 ```
 
 ---
 
-## Versionování (Semantic Versioning)
+## Versioning (Semantic Versioning)
 
-Dodržujte sémantické verzování: `MAJOR.MINOR.PATCH-PRERELEASE+BUILD`
+Follow semantic versioning: `MAJOR.MINOR.PATCH-PRERELEASE+BUILD`
 
-Příklady:
-- `v1.0.0` - prvnı stabilní release
-- `v1.1.0` - nová features (backward compatible)
+Examples:
+- `v1.0.0` - first stable release
+- `v1.1.0` - new features (backward compatible)
 - `v1.0.1` - bug fix
 - `v1.0.0-rc1` - release candidate
-- `v1.0.0-alpha` - alpha verze
+- `v1.0.0-alpha` - alpha version
 
-### Kdy zvýšit verzi?
+### When to Bump Version?
 
-- **MAJOR**: breaking changes (ne-kompatible změny)
-- **MINOR**: nové features (kompatibilní)
+- **MAJOR**: breaking changes (incompatible changes)
+- **MINOR**: new features (compatible)
 - **PATCH**: bug fixes
 
 ---
 
-## Checks před release
+## Pre-Release Checks
 
 ```bash
-# 1. Ujistěte se, že je vše committováno
+# 1. Make sure everything is committed
 git status
 
-# 2. Spusťte testy a lint
+# 2. Run tests and linting
 make audit
 
-# 3. Prohlédněte si poslední commity
+# 3. Review recent commits
 git log --oneline -n 10
 
-# 4. Zkontrolujte existující tagy
+# 4. Check existing tags
 git tag
 
-# 5. Teprve pak vytvoříte nový tag
+# 5. Only then create a new tag
 git tag -a v1.0.0 -m "Release v1.0.0"
 
-# 6. Push tagu
+# 6. Push the tag
 git push origin v1.0.0
 ```
 
@@ -143,19 +143,19 @@ git push origin v1.0.0
 
 ## Troubleshooting
 
-### Build selže s errory
-- Spusťte `make audit` a opravte všechny problémy
-- Checkněte si Go verzi: `go version` (měla by být 1.23.0+)
+### Build fails with errors
+- Run `make audit` and fix all issues
+- Check your Go version: `go version` (should be 1.23.0+)
 
-### GitHub Actions workflow nereaguje
-- Checkněte `.github/workflows/release.yml`
-- Jděte na GitHub Actions záložku a podívejte se na logy
+### GitHub Actions workflow doesn't respond
+- Check `.github/workflows/release.yml`
+- Go to the GitHub Actions tab and check the logs
 
-### Binárka nepracuje na Windowsech
-- Ujistěte se, že máte `static/` soubory vedle `.exe`
-- Windows binárka potřebuje přístup k `static/` adresáři
+### Binary doesn't work on Windows
+- Make sure you have `static/` files next to the `.exe`
+- Windows binary needs access to the `static/` directory
 
 ---
 
-Další otázky? Podívejte se na README.md v sekci "Release Management".
+More questions? Check out README.md in the "Release Management" section.
 
