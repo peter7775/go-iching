@@ -19,7 +19,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	var items []Hexagram
 	if err := json.NewDecoder(f).Decode(&items); err != nil {
 		panic(err)

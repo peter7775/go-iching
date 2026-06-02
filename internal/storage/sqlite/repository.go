@@ -111,7 +111,9 @@ ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	var out []domain.Reading
 	for rows.Next() {
