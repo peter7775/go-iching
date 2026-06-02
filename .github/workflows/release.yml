@@ -44,42 +44,42 @@ jobs:
         with:
           fetch-depth: 0
 
-       - uses: actions/setup-go@v5
-         with:
-           go-version: '1.23.0'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.0'
 
-       - name: Build ${{ matrix.platform }}
-         run: |
-           mkdir -p bin
-           if [ "${{ matrix.goos }}" = "windows" ]; then
-             EXE=".exe"
-           else
-             EXE=""
-           fi
-           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-             go build -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
-             -o "bin/iching-api-${{ matrix.platform }}${EXE}" ./cmd/api
+      - name: Build ${{ matrix.platform }}
+        run: |
+          mkdir -p bin
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            EXE=".exe"
+          else
+            EXE=""
+          fi
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
+            -o "bin/iching-api-${{ matrix.platform }}${EXE}" ./cmd/api
 
-       - name: Prepare distribution dir
-         run: |
-           mkdir -p release-staging/iching-api-${{ matrix.platform }}
-           if [ "${{ matrix.goos }}" = "windows" ]; then
-             cp bin/iching-api-${{ matrix.platform }}.exe release-staging/iching-api-${{ matrix.platform }}/
-           else
-             cp bin/iching-api-${{ matrix.platform }} release-staging/iching-api-${{ matrix.platform }}/
-           fi
-           cp -r cmd/api/static release-staging/iching-api-${{ matrix.platform }}/
+      - name: Prepare distribution dir
+        run: |
+          mkdir -p release-staging/iching-api-${{ matrix.platform }}
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            cp bin/iching-api-${{ matrix.platform }}.exe release-staging/iching-api-${{ matrix.platform }}/
+          else
+            cp bin/iching-api-${{ matrix.platform }} release-staging/iching-api-${{ matrix.platform }}/
+          fi
+          cp -r cmd/api/static release-staging/iching-api-${{ matrix.platform }}/
 
-       - name: Create archive
-         run: |
-           cd release-staging
-           if [ "${{ matrix.goos }}" = "windows" ]; then
-             zip -r ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-api-${{ matrix.platform }}/
-           else
-             tar -czf ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz iching-api-${{ matrix.platform }}/
-           fi
-           cd ..
-           rm -rf release-staging
+      - name: Create archive
+        run: |
+          cd release-staging
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip -r ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-api-${{ matrix.platform }}/
+          else
+            tar -czf ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz iching-api-${{ matrix.platform }}/
+          fi
+          cd ..
+          rm -rf release-staging
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -65,7 +65,9 @@ func LoadEnglish() (map[int]WilhelmHexagram, error) {
 		return nil, fmt.Errorf("unmarshal english dataset: %w", err)
 	}
 	out := make(map[int]WilhelmHexagram, len(items))
-	for _, item := range items { out[item.Number] = item }
+	for _, item := range items {
+		out[item.Number] = item
+	}
 	return out, nil
 }
 
@@ -75,6 +77,8 @@ func LoadCzech() (map[int]CzechHexagram, error) {
 		return nil, fmt.Errorf("unmarshal czech dataset: %w", err)
 	}
 	out := make(map[int]CzechHexagram, len(items))
-	for _, item := range items { out[item.Number] = item }
+	for _, item := range items {
+		out[item.Number] = item
+	}
 	return out, nil
 }

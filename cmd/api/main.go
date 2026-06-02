@@ -71,13 +71,21 @@ func mustRepository(cfg config.Config) (service.ReadingRepository, func()) {
 	switch cfg.Storage {
 	case "postgres":
 		db, err := sql.Open("pgx", cfg.PostgresDSN)
-		if err != nil { log.Fatal(err) }
-		if err := db.Ping(); err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Fatal(err)
+		}
 		return pgrepo.NewReadingRepository(db), func() { _ = db.Close() }
 	case "sqlite":
 		db, err := sql.Open("sqlite", cfg.SQLitePath)
-		if err != nil { log.Fatal(err) }
-		if err := db.Ping(); err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Fatal(err)
+		}
 		return sqliterepo.NewReadingRepository(db), func() { _ = db.Close() }
 	default:
 		return mem.NewReadingRepository(), func() {}
@@ -86,7 +94,9 @@ func mustRepository(cfg config.Config) (service.ReadingRepository, func()) {
 
 func defaultSQLitePath(appName, fileName string) string {
 	base, err := os.UserConfigDir()
-	if err != nil || base == "" { return fileName }
+	if err != nil || base == "" {
+		return fileName
+	}
 	dir := filepath.Join(base, appName)
 	_ = os.MkdirAll(dir, 0o755)
 	return filepath.Join(dir, fileName)
@@ -94,10 +104,17 @@ func defaultSQLitePath(appName, fileName string) string {
 
 func serverURL(addr string) string {
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil { host = addr; port = "" }
-	if host == "" || host == "0.0.0.0" || host == "::" { host = "127.0.0.1" }
+	if err != nil {
+		host = addr
+		port = ""
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
 	u := url.URL{Scheme: "http", Host: host}
-	if port != "" { u.Host = net.JoinHostPort(host, port) }
+	if port != "" {
+		u.Host = net.JoinHostPort(host, port)
+	}
 	return u.String()
 }
 
