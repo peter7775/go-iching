@@ -181,3 +181,13 @@ iching-api-windows-amd64.exe
 - Reading history is returned in reverse chronological order. 
 - Reflection persistence is present at repository level through `SaveReflection(...)`, but the currently known HTTP layer does not yet expose dedicated reflection endpoints.
 - The current repository scans `language` as a plain string, so nullable historical rows may require a migration or a repository fix if older data contains `NULL` in that column.
+
+This project is released under the Custom Attribution Software License v1.0.
+
+Attribution
+If you reuse, redistribute, or modify this software, you must keep the copyright notice and credit:
+
+ Petr Štěpánek <petrstepanek99@proton.me>
+
+License
+See LICENSE.
