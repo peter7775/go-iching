@@ -1,4 +1,4 @@
-# I Ching Fiber App
+# I Ching App
 
 A Go application for I Ching divination with a Fiber-based HTTP API, a browser frontend, and persistent reading storage. The current project supports SQLite, PostgreSQL, and in-memory repositories, and stores each reading together with the original question, line data, interpretation payload, and optional reflection fields. 
 
