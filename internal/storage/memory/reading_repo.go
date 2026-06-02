@@ -3,36 +3,47 @@ package memory
 import (
 	"context"
 	"errors"
-	"sort"
-	"sync"
+	"time"
 
 	"github.com/example/iching-fiber-app/internal/domain"
 )
 
 type ReadingRepository struct {
-	mu sync.RWMutex
-	items map[string]domain.Reading
+	items []domain.Reading
 }
 
 func NewReadingRepository() *ReadingRepository {
-	return &ReadingRepository{items: map[string]domain.Reading{}}
+	return &ReadingRepository{items: []domain.Reading{}}
 }
 
-func (r *ReadingRepository) Save(_ context.Context, reading domain.Reading) (domain.Reading, error) {
-	r.mu.Lock(); defer r.mu.Unlock()
-	r.items[reading.ID] = reading
-	return reading, nil
+func (r *ReadingRepository) Save(_ context.Context, in domain.Reading) (domain.Reading, error) {
+	r.items = append([]domain.Reading{in}, r.items...)
+	return in, nil
 }
+
 func (r *ReadingRepository) List(_ context.Context) ([]domain.Reading, error) {
-	r.mu.RLock(); defer r.mu.RUnlock()
-	out := make([]domain.Reading, 0, len(r.items))
-	for _, v := range r.items { out = append(out, v) }
-	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
+	out := make([]domain.Reading, len(r.items))
+	copy(out, r.items)
 	return out, nil
 }
+
 func (r *ReadingRepository) Get(_ context.Context, id string) (domain.Reading, error) {
-	r.mu.RLock(); defer r.mu.RUnlock()
-	v, ok := r.items[id]
-	if !ok { return domain.Reading{}, errors.New("reading not found") }
-	return v, nil
+	for _, item := range r.items {
+		if item.ID == id {
+			return item, nil
+		}
+	}
+	return domain.Reading{}, errors.New("reading not found")
+}
+
+func (r *ReadingRepository) SaveReflection(_ context.Context, id string, rating int, note string, createdAt time.Time) error {
+	for i := range r.items {
+		if r.items[i].ID == id {
+			r.items[i].Reflection.Rating = rating
+			r.items[i].Reflection.Note = note
+			r.items[i].Reflection.CreatedAt = &createdAt
+			return nil
+		}
+	}
+	return errors.New("reading not found")
 }

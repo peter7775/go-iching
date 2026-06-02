@@ -17,6 +17,7 @@ type ReadingRepository interface {
 	Save(context.Context, domain.Reading) (domain.Reading, error)
 	List(context.Context) ([]domain.Reading, error)
 	Get(context.Context, string) (domain.Reading, error)
+	SaveReflection(context.Context, string, int, string, time.Time) error
 }
 
 type ReadingService struct {
@@ -41,6 +42,11 @@ type CreateReadingInput struct {
 	Random   bool              `json:"random"`
 }
 
+type ReflectionInput struct {
+	Rating int    `json:"rating"`
+	Note   string `json:"note"`
+}
+
 func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (domain.Reading, error) {
 	if in.Question == "" { return domain.Reading{}, errors.New("question is required") }
 	lang := in.Language
@@ -57,12 +63,72 @@ func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (dom
 	relating := iching.HexagramNumberFromLines(relatingLines)
 	changing := changingLines(lines)
 	interp := s.buildInterpretation(in.Question, lang, primary, relating, changing)
-	r := domain.Reading{ID: newID(), Question: in.Question, Method: in.Method, Language: lang, Lines: lines, PrimaryNumber: primary, RelatingNumber: relating, ChangingLines: changing, Interpretation: interp, CreatedAt: time.Now().UTC()}
+	now := time.Now().UTC()
+	r := domain.Reading{ID: newID(), Question: in.Question, Method: in.Method, Language: lang, Lines: lines, PrimaryNumber: primary, RelatingNumber: relating, ChangingLines: changing, Interpretation: interp, CreatedAt: now, Reflection: reflectionState(now, nil, 0, "")}
 	return s.repo.Save(ctx, r)
 }
 
-func (s *ReadingService) List(ctx context.Context) ([]domain.Reading, error) { return s.repo.List(ctx) }
-func (s *ReadingService) Get(ctx context.Context, id string) (domain.Reading, error) { return s.repo.Get(ctx, id) }
+func (s *ReadingService) List(ctx context.Context) ([]domain.Reading, error) {
+	items, err := s.repo.List(ctx)
+	if err != nil { return nil, err }
+	for i := range items { items[i].Reflection = normalizeReflection(items[i]) }
+	return items, nil
+}
+
+func (s *ReadingService) Get(ctx context.Context, id string) (domain.Reading, error) {
+	item, err := s.repo.Get(ctx, id)
+	if err != nil { return domain.Reading{}, err }
+	item.Reflection = normalizeReflection(item)
+	return item, nil
+}
+
+func (s *ReadingService) SaveReflection(ctx context.Context, id string, in ReflectionInput) (domain.Reading, error) {
+	if in.Rating < 0 || in.Rating > 5 { return domain.Reading{}, errors.New("rating must be between 0 and 5") }
+	item, err := s.repo.Get(ctx, id)
+	if err != nil { return domain.Reading{}, err }
+	state := normalizeReflection(item)
+	if !state.Eligible { return domain.Reading{}, fmt.Errorf("reflection available after %s", state.EligibleAt.Format(time.RFC3339)) }
+	now := time.Now().UTC()
+	if err := s.repo.SaveReflection(ctx, id, in.Rating, strings.TrimSpace(in.Note), now); err != nil { return domain.Reading{}, err }
+	updated, err := s.repo.Get(ctx, id)
+	if err != nil { return domain.Reading{}, err }
+	updated.Reflection = normalizeReflection(updated)
+	return updated, nil
+}
+
+func (s *ReadingService) RelevanceStats(ctx context.Context) (domain.RelevanceStats, error) {
+	items, err := s.repo.List(ctx)
+	if err != nil { return domain.RelevanceStats{}, err }
+	dist := map[int]int{0:0,1:0,2:0,3:0,4:0,5:0}
+	var sum int
+	var rated int
+	for _, item := range items {
+		state := normalizeReflection(item)
+		if state.CreatedAt != nil {
+			dist[state.Rating]++
+			sum += state.Rating
+			rated++
+		}
+	}
+	stats := domain.RelevanceStats{RatedCount: rated, TotalCount: len(items), Distribution: dist}
+	if rated > 0 {
+		stats.AverageRating = float64(sum) / float64(rated)
+		stats.RelevancePct = (float64(sum) / float64(rated*5)) * 100
+	}
+	return stats, nil
+}
+
+func normalizeReflection(r domain.Reading) domain.Reflection {
+	var created *time.Time
+	if r.Reflection.CreatedAt != nil { created = r.Reflection.CreatedAt }
+	return reflectionState(r.CreatedAt, created, r.Reflection.Rating, r.Reflection.Note)
+}
+
+func reflectionState(createdAt time.Time, reflectionAt *time.Time, rating int, note string) domain.Reflection {
+	eligibleAt := createdAt.Add(7 * 24 * time.Hour)
+	eligible := !time.Now().UTC().Before(eligibleAt)
+	return domain.Reflection{Rating: rating, Note: note, CreatedAt: reflectionAt, Eligible: eligible, EligibleAt: eligibleAt}
+}
 
 func (s *ReadingService) buildInterpretation(question, lang string, primary, relating int, changing []int) domain.ReadingInterpretation {
 	result := domain.ReadingInterpretation{Language: lang, Summary: summaryFor(lang)}
@@ -92,22 +158,10 @@ func (s *ReadingService) buildInterpretation(question, lang string, primary, rel
 }
 
 func mapEnglish(n int, h iching.WilhelmHexagram) domain.InterpretationHexagram {
-	return domain.InterpretationHexagram{
-		Number: n, Name: h.Name, Title: h.Title, Character: h.Character, Traditional: h.Traditional, Pinyin: h.Pinyin,
-		Above: domain.InterpretationTrigram{Chinese: h.Above.Chinese, Symbolic: h.Above.Symbolic, Alchemical: h.Above.Alchemical},
-		Below: domain.InterpretationTrigram{Chinese: h.Below.Chinese, Symbolic: h.Below.Symbolic, Alchemical: h.Below.Alchemical},
-		Judgment: domain.InterpretationSection{Text: h.Judgment.Text, Comments: h.Judgment.Comments},
-		Image: domain.InterpretationSection{Text: h.Image.Text, Comments: h.Image.Comments},
-	}
+	return domain.InterpretationHexagram{Number:n, Name:h.Name, Title:h.Title, Character:h.Character, Traditional:h.Traditional, Pinyin:h.Pinyin, Above:domain.InterpretationTrigram{Chinese:h.Above.Chinese, Symbolic:h.Above.Symbolic, Alchemical:h.Above.Alchemical}, Below:domain.InterpretationTrigram{Chinese:h.Below.Chinese, Symbolic:h.Below.Symbolic, Alchemical:h.Below.Alchemical}, Judgment:domain.InterpretationSection{Text:h.Judgment.Text, Comments:h.Judgment.Comments}, Image:domain.InterpretationSection{Text:h.Image.Text, Comments:h.Image.Comments}}
 }
 func mapCzech(n int, h iching.CzechHexagram) domain.InterpretationHexagram {
-	return domain.InterpretationHexagram{
-		Number: n, Name: h.NameCS, Title: h.TitleCS, Character: h.Character, Traditional: h.Traditional, Pinyin: h.Pinyin,
-		Above: domain.InterpretationTrigram{Chinese: h.Above.Chinese, Symbolic: h.Above.SymbolicCS, Alchemical: h.Above.AlchemicalCS},
-		Below: domain.InterpretationTrigram{Chinese: h.Below.Chinese, Symbolic: h.Below.SymbolicCS, Alchemical: h.Below.AlchemicalCS},
-		Judgment: domain.InterpretationSection{Text: h.JudgmentCS.Text, Comments: h.JudgmentCS.Comments},
-		Image: domain.InterpretationSection{Text: h.ImageCS.Text, Comments: h.ImageCS.Comments},
-	}
+	return domain.InterpretationHexagram{Number:n, Name:h.NameCS, Title:h.TitleCS, Character:h.Character, Traditional:h.Traditional, Pinyin:h.Pinyin, Above:domain.InterpretationTrigram{Chinese:h.Above.Chinese, Symbolic:h.Above.SymbolicCS, Alchemical:h.Above.AlchemicalCS}, Below:domain.InterpretationTrigram{Chinese:h.Below.Chinese, Symbolic:h.Below.SymbolicCS, Alchemical:h.Below.AlchemicalCS}, Judgment:domain.InterpretationSection{Text:h.JudgmentCS.Text, Comments:h.JudgmentCS.Comments}, Image:domain.InterpretationSection{Text:h.ImageCS.Text, Comments:h.ImageCS.Comments}}
 }
 func summaryFor(lang string) string {
 	if lang == "en" { return "Interpretation combines the primary hexagram, changing lines, and the relating hexagram." }
