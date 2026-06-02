@@ -101,6 +101,80 @@ With the current static-file setup, distributing only the `.exe` is not enough u
 
 In the currently known `main.go`, the application starts the server and logs the listening address, but it does not automatically launch the browser. Browser auto-open would need to be added explicitly in startup code.
 
+## Release Management
+
+### Local Release Build
+
+To build release packages for all platforms (Linux, Windows, macOS):
+
+```bash
+make release-build
+```
+
+This will:
+1. Run code quality checks (tidy, vet, lint, test)
+2. Build binaries for all platforms (x86_64 and ARM64 variants)
+3. Create compressed archives in `dist/` directory
+
+Individual platform builds:
+```bash
+make build-linux              # Linux x86_64
+make build-linux-arm64        # Linux ARM64
+make build-windows            # Windows x86_64
+make build-windows-arm64      # Windows ARM64
+make build-darwin             # macOS x86_64
+```
+
+### Release Workflow (with Git Tags)
+
+1. **Prepare code**: Ensure all changes are committed and tests pass
+   ```bash
+   make audit  # Runs tidy, vet, lint, test
+   ```
+
+2. **Create a release tag**: Tags should follow semantic versioning (e.g., `v0.1.0`, `v1.0.0-beta`)
+   ```bash
+   git tag -a v0.1.0 -m "Release v0.1.0: Initial release"
+   git push origin v0.1.0
+   ```
+
+3. **GitHub Actions**: When you push a tag starting with `v`, GitHub Actions automatically:
+   - Builds binaries for all platforms
+   - Creates compressed archives
+   - Creates a GitHub Release with all artifacts
+
+4. **Manual Release Build** (if not using GitHub Actions):
+   ```bash
+   git tag -a v0.1.0 -m "Release v0.1.0"
+   make release-build
+   ```
+
+### Distribution Files
+
+Release packages include:
+- **Linux**: `iching-api-linux-amd64-vX.Y.Z.tar.gz`, `iching-api-linux-arm64-vX.Y.Z.tar.gz`
+- **Windows**: `iching-api-windows-amd64-vX.Y.Z.zip`, `iching-api-windows-arm64-vX.Y.Z.zip`
+- **macOS**: `iching-api-darwin-amd64-vX.Y.Z.tar.gz`, `iching-api-darwin-arm64-vX.Y.Z.tar.gz`
+
+Each archive contains:
+- Compiled binary for the platform
+- `static/` directory with web UI files
+
+### Installation from Release
+
+**Linux/macOS**:
+```bash
+tar -xzf iching-api-linux-amd64-vX.Y.Z.tar.gz
+chmod +x iching-api-linux-amd64
+./iching-api-linux-amd64
+```
+
+**Windows**:
+```cmd
+# Extract ZIP file
+iching-api-windows-amd64.exe
+```
+
 ## Notes
 
 - The current SQLite repository stores line data and interpretation data as JSON strings in the database.
