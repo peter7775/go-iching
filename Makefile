@@ -7,11 +7,13 @@ GOLANGCI_LINT := $(CURDIR)/bin/golangci-lint
 GOLANGCI_LINT_VERSION ?= v2.12.2
 COMPOSE ?= docker compose
 
-.PHONY: help build run format fmt lint tidy clean test vet audit docker-up docker-down docker-logs
+.PHONY: help build build-windows build-windows-arm64 run format fmt lint tidy clean test vet audit docker-up docker-down docker-logs
 
 help:
 	@echo "Available targets:"
 	@echo "  make build       - build binary to ./bin/$(APP_NAME)"
+	@echo "  make build-windows - build Windows binary"
+	@echo "  make build-windows-arm64 - build Windows ARM64 binary"
 	@echo "  make run         - run app from $(MAIN_PKG)"
 	@echo "  make format      - format Go files with gofmt"
 	@echo "  make fmt         - alias for format"
@@ -29,6 +31,13 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_PKG)
 
+build-windows:
+	mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(APP_NAME).exe $(MAIN_PKG)
+
+build-windows-arm64:
+	mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(APP_NAME)-arm64.exe $(MAIN_PKG)
 run:
 	$(GO) run $(MAIN_PKG)
 
