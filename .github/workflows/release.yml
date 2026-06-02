@@ -51,29 +51,35 @@ jobs:
        - name: Build ${{ matrix.platform }}
          run: |
            mkdir -p bin
-           BINARY_NAME="bin/iching-api-${{ matrix.platform }}"
            if [ "${{ matrix.goos }}" = "windows" ]; then
-             BINARY_NAME="${BINARY_NAME}.exe"
+             EXE=".exe"
+           else
+             EXE=""
            fi
            CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
              go build -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
-             -o "$BINARY_NAME" ./cmd/api
+             -o "bin/iching-api-${{ matrix.platform }}${EXE}" ./cmd/api
 
-       - name: Create archive (tar.gz for Unix)
-         if: matrix.goos != 'windows'
+       - name: Prepare distribution dir
          run: |
-           tar -czf iching-api-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz \
-             -C bin iching-api-${{ matrix.platform }} \
-             -C ../cmd/api static/
+           mkdir -p release-staging/iching-api-${{ matrix.platform }}
+           if [ "${{ matrix.goos }}" = "windows" ]; then
+             cp bin/iching-api-${{ matrix.platform }}.exe release-staging/iching-api-${{ matrix.platform }}/
+           else
+             cp bin/iching-api-${{ matrix.platform }} release-staging/iching-api-${{ matrix.platform }}/
+           fi
+           cp -r cmd/api/static release-staging/iching-api-${{ matrix.platform }}/
 
-       - name: Create archive (zip for Windows)
-         if: matrix.goos == 'windows'
+       - name: Create archive
          run: |
-           cd bin
-           zip -j ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-api-${{ matrix.platform }}.exe
+           cd release-staging
+           if [ "${{ matrix.goos }}" = "windows" ]; then
+             zip -r ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-api-${{ matrix.platform }}/
+           else
+             tar -czf ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz iching-api-${{ matrix.platform }}/
+           fi
            cd ..
-           # Copy static files to zip
-           zip -r iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip cmd/api/static/
+           rm -rf release-staging
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
