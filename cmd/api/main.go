@@ -3,13 +3,18 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"net"
+	"net/url"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
-	_ "github.com/example/iching-fiber-app/internal/db"
 	"github.com/example/iching-fiber-app/internal/config"
+	_ "github.com/example/iching-fiber-app/internal/db"
 	"github.com/example/iching-fiber-app/internal/httpfiber"
 	"github.com/example/iching-fiber-app/internal/service"
 	mem "github.com/example/iching-fiber-app/internal/storage/memory"
@@ -35,7 +40,17 @@ func main() {
 		_ = app.ShutdownWithContext(shutdownCtx)
 	}()
 
+	appURL := serverURL(cfg.Addr)
 	log.Printf("listening on %s", cfg.Addr)
+	log.Printf("open UI at %s", appURL)
+
+	go func() {
+		time.Sleep(700 * time.Millisecond)
+		if err := openBrowser(appURL); err != nil {
+			log.Printf("browser auto-open failed: %v", err)
+		}
+	}()
+
 	if err := app.Listen(cfg.Addr); err != nil {
 		log.Fatal(err)
 	}
@@ -63,5 +78,34 @@ func mustRepository(cfg config.Config) (service.ReadingRepository, func()) {
 		return sqliterepo.NewReadingRepository(db), func() { _ = db.Close() }
 	default:
 		return mem.NewReadingRepository(), func() {}
+	}
+}
+
+func serverURL(addr string) string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+		port = ""
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	u := url.URL{Scheme: "http", Host: host}
+	if port != "" {
+		u.Host = net.JoinHostPort(host, port)
+	}
+	return u.String()
+}
+
+func openBrowser(target string) error {
+	switch runtime.GOOS {
+	case "windows":
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", target).Start()
+	case "darwin":
+		return exec.Command("open", target).Start()
+	case "linux":
+		return exec.Command("xdg-open", target).Start()
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 }
