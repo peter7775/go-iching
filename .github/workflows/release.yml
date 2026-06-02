@@ -44,9 +44,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
+       - uses: actions/setup-go@v5
+         with:
+           go-version: '1.23.0'
 
        - name: Build ${{ matrix.platform }}
          run: |
