@@ -1,1 +1,20 @@
-.idea
+# Build
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+# Dev
+*.db
+tmp/
+.env.local
