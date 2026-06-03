@@ -57,7 +57,7 @@ func (s *ReadingService) Create(ctx context.Context, in CreateReadingInput) (dom
 	}
 	lang := in.Language
 	if lang == "" {
-		lang = "cs"
+		lang = "en"
 	}
 	lines := in.Lines
 	if in.Random || in.Method == domain.MethodCoins {
