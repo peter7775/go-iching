@@ -2,7 +2,9 @@
 
 A Go application for I Ching divination with a Fiber-based HTTP API, a browser frontend, and persistent reading storage. The current project supports SQLite, PostgreSQL, and in-memory repositories.
 
-![screenshot.png](cmd/api/static/screenshot.png)
+
+<img width="1196" height="996" alt="image" src="https://github.com/user-attachments/assets/b229fa5d-9edf-4e09-be43-7c80e8adc5f6" />
+
 
 ## Buy me a coffee, if you like and use this app
 
