@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+# Create system user for iching-api service if it doesn't exist
+if ! id -u iching-api > /dev/null 2>&1; then
+    useradd --system --no-create-home --shell /bin/false iching-api
+fi
+
+# Create default data directory
+mkdir -p /var/lib/iching-api
+chown iching-api:iching-api /var/lib/iching-api
+chmod 755 /var/lib/iching-api
+
+# Create log directory
+mkdir -p /var/log/iching-api
+chown iching-api:iching-api /var/log/iching-api
+chmod 755 /var/log/iching-api
+
+echo "iching-api installed successfully"
+echo "Start the service with: sudo systemctl start iching-api"
+echo "Enable auto-start with: sudo systemctl enable iching-api"
