@@ -58,25 +58,25 @@ jobs:
           fi
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             go build -ldflags="-s -w -X main.Version=${{ github.ref_name }}" \
-            -o "bin/iching-api-${{ matrix.platform }}${EXE}" ./cmd/api
+            -o "bin/iching-${{ matrix.platform }}${EXE}" ./cmd/api
 
       - name: Prepare distribution dir
         run: |
           mkdir -p release-staging/iching-api-${{ matrix.platform }}
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            cp bin/iching-api-${{ matrix.platform }}.exe release-staging/iching-api-${{ matrix.platform }}/
+            cp bin/iching-${{ matrix.platform }}.exe release-staging/iching-${{ matrix.platform }}/
           else
-            cp bin/iching-api-${{ matrix.platform }} release-staging/iching-api-${{ matrix.platform }}/
+            cp bin/iching-${{ matrix.platform }} release-staging/iching-${{ matrix.platform }}/
           fi
-          cp -r cmd/api/static release-staging/iching-api-${{ matrix.platform }}/
+          cp -r cmd/api/static release-staging/iching-${{ matrix.platform }}/
 
       - name: Create archive
         run: |
           cd release-staging
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip -r ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-api-${{ matrix.platform }}/
+            zip -r ../iching-${{ matrix.platform }}-${{ github.ref_name }}.zip iching-${{ matrix.platform }}/
           else
-            tar -czf ../iching-api-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz iching-api-${{ matrix.platform }}/
+            tar -czf ../iching-${{ matrix.platform }}-${{ github.ref_name }}.tar.gz iching-${{ matrix.platform }}/
           fi
           cd ..
           rm -rf release-staging
@@ -86,7 +86,7 @@ jobs:
         with:
           name: Release-artifacts-${{ matrix.platform }}
           path: |
-            iching-api-*
+            iching-*
 
   release:
     name: Create Release
