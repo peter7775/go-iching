@@ -10,6 +10,8 @@ A Go application for I Ching divination with a Fiber-based HTTP API, a browser f
 
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FF813F?style=flat&logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/petrms)
 
+## [Please provide a feedback](https://github.com/peter7775/go-iching/discussions/3#discussion-10208866)
+
 ## Quick Start
 
 ### Installation Options
