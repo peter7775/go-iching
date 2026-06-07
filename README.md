@@ -1,6 +1,6 @@
 # I Ching App
 
-A Go application for I Ching divination with a Fiber-based HTTP API, a browser frontend, and persistent reading storage. The current project supports SQLite, PostgreSQL, and in-memory repositories.
+A Go application for I Ching divination (Wilhelm standart dataset, not AI blah-blah) with a Fiber-based HTTP API, a browser frontend, and persistent reading storage. The current project supports SQLite, PostgreSQL, and in-memory repositories.
 
 
 <img width="1196" height="996" alt="image" src="https://github.com/user-attachments/assets/b229fa5d-9edf-4e09-be43-7c80e8adc5f6" />
