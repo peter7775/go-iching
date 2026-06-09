@@ -5,11 +5,6 @@ A Go application for I Ching divination (Wilhelm standart dataset, not AI blah-b
 
 <img width="1196" height="996" alt="image" src="https://github.com/user-attachments/assets/b229fa5d-9edf-4e09-be43-7c80e8adc5f6" />
 
-
-## Buy me a coffee, if you like and use this app
-
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%23FF813F?style=flat&logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/petrms)
-
 ## [Please provide a feedback](https://github.com/peter7775/go-iching/discussions/3#discussion-10208866)
 
 ## Quick Start
